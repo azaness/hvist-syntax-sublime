@@ -1,0 +1,169 @@
+%YAML 1.2
+---
+name: Hvist
+file_extensions: ["@", hvist, at]
+scope: hvist
+
+variables:
+  first_letter: '(_|\p{Letter})'
+  last_letter: '(_|\p{Letter}|[0-9])'
+  token_letter: '(_|:|-|\p{Letter}|[0-9])'
+  token: '{{first_letter}}({{token_letter}}*{{last_letter}})?'
+
+contexts:
+  main:
+    - match: ''
+      scope: body
+      push: body
+
+  body:
+    - meta_scope: hvist-body
+    - match: \/\/
+      scope: comment
+      push: line_comment
+    - match: \/\*
+      scope: comment
+      push: block_comment
+    - match: \\
+      push: escape
+    - match: \'
+      push: text1
+    - match: \"
+      push: text2
+    - match: \`
+      push: raw_text
+    - include: block
+    - match: '{{token}}'
+      scope: entity.name.section.tag
+      push: tag
+    - match: '(%|@(?![a-z])|@(tail|noop|once|else|raw|wrap|escape|comment|cdata))'
+      scope: keyword.operator
+    - match: '@tag'
+      scope: keyword.operator
+    - match: '@(root|self)'
+      scope: keyword.operator
+      push: args_tail_rule
+    - match: '@(xml|doctype)'
+      scope: keyword.operator
+      push: args_rule
+    - match: '@module'
+      scope: keyword.operator
+      push: module
+    - match: '@import'
+      scope: keyword.operator
+      push: import
+    - match: '@for'
+      scope: keyword.operator
+      push: import
+    - match: '@ignore'
+      scope: keyword.operator
+      push: import
+    - match: '@rename'
+      scope: keyword.operator
+      push: import
+    - match: '@(if|while|repeat|warn|log)'
+      scope: keyword.operator
+      push: expr_rule
+
+  block:
+    - match: '\{'
+      scope: punctuation.section.block.begin
+      set:
+        - meta_scope: meta.block.js
+        - match: '\}'
+          scope: punctuation.section.block.end
+          pop: true
+        - include: body
+
+  line_comment:
+    - meta_scope: comment.line
+    - match: $
+      pop: true
+
+  block_comment:
+    - meta_scope: comment.block
+    - match: \*\/
+      pop: true
+
+  invalid:
+    - match: $
+      pop: true
+
+  escape:
+    - meta_scope: constant.character.escape
+    - match: '([^xu]|x\h\h|u\h\h\h\h)'
+      pop: true
+    - match: .*
+      scope: invalid.illegal
+      push: invalid
+
+  text1:
+    - meta_scope: string.quoted.single
+    - match: \\
+      push: escape
+    - match: \'
+      pop: true
+
+  text2:
+    - meta_scope: string.quoted.double
+    - match: \\
+      push: escape
+    - match: \"
+      pop: true
+
+  raw_text:
+    - meta_scope: string.quoted.other
+    - match: \\
+      push: escape
+    - match: \`
+      pop: true
+
+  number:
+    - meta_scope: number
+
+  expression:
+    - meta_scope: expression
+
+  tag:
+    - match: ''
+      pop: true
+
+  import:
+    - match: ''
+      pop: true
+
+  module:
+    - match: ''
+      pop: true
+
+  for:
+    - match: ''
+      pop: true
+
+  ignore:
+    - match: ''
+      pop: true
+
+  rename:
+    - match: ''
+      pop: true
+
+  expr_rule:
+    - match: ''
+      pop: true
+
+  args_tail_rule:
+    - match: ''
+      pop: true
+
+  args_rule:
+    - match: ''
+      pop: true
+
+  tag_datails:
+    - match: ''
+      pop: true
+
+  tag_args:
+    - match: ''
+      pop: true
